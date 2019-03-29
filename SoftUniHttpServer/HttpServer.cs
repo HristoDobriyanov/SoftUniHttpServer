@@ -27,13 +27,13 @@ namespace SoftUniHttpServer
             while (this.isWorking)
             {
                 var client = this.tcpListener.AcceptTcpClient();
-                Task.Run(() => ProcessClient(client));
+                Task.Run(() => ProcessClientAsync(client));
 
             }
 
         }
 
-        private static async void ProcessClient(TcpClient client)
+        private static async void ProcessClientAsync(TcpClient client)
         {
             var buffer = new byte[10240];
             var stream = client.GetStream();
