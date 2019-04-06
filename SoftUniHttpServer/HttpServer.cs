@@ -10,12 +10,14 @@ namespace SoftUniHttpServer
 {
     public class HttpServer : IHttpServer
     {
-        private TcpListener tcpListener;
+        private readonly TcpListener tcpListener;
         private bool isWorking;
+        private readonly RequestProcessor requestProcessor;
 
         public HttpServer()
         {
             this.tcpListener = new TcpListener(IPAddress.Parse("127.0.0.1"), 80);
+            this.requestProcessor = new RequestProcessor();
         }
 
         public void Start()
@@ -27,13 +29,21 @@ namespace SoftUniHttpServer
             while (this.isWorking)
             {
                 var client = this.tcpListener.AcceptTcpClient();
-                Task.Run(() => ProcessClientAsync(client));
-
+                requestProcessor.ProcessClientAsync(client);
             }
-
         }
 
-        private static async void ProcessClientAsync(TcpClient client)
+
+
+        public void Stop()
+        {
+            this.isWorking = false;
+        }
+    }
+
+    public class RequestProcessor
+    {
+        public async Task ProcessClientAsync(TcpClient client)
         {
             var buffer = new byte[10240];
             var stream = client.GetStream();
@@ -41,20 +51,14 @@ namespace SoftUniHttpServer
             var requestText = Encoding.UTF8.GetString(buffer, 0, readLength);
             Console.WriteLine(new string('=', 60));
             Console.WriteLine(requestText);
-            await Task.Run(() => Thread.Sleep(10000));
-            var responseText = System.DateTime.Now.ToString(); ////File.ReadAllText("index.html");
-
+            var responseText = File.ReadAllText("index.html");
             var responseBytes = Encoding.UTF8.GetBytes(
                 "HTTP/1.0 200 OK" + Environment.NewLine +
+                "Content-type: html" + Environment.NewLine +
+                "Set-cookie: lang=bg" + Environment.NewLine +
                 "Content-Length: " + responseText.Length + Environment.NewLine + Environment.NewLine +
                 responseText);
-
             await stream.WriteAsync(responseBytes);
-        }
-
-        public void Stop()
-        {
-            this.isWorking = false;
         }
     }
 }
